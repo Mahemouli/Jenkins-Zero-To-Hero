@@ -2,19 +2,33 @@ pipeline {
   agent none
   stages {
     stage('Back-end') {
-      agent {
-        docker { image 'maven:3.8.1-adoptopenjdk-11' }
-      }
       steps {
-        sh 'mvn --version'
+        script {
+          docker.image('maven:3.8.1-adoptopenjdk-11').withRun('-d --name backend-container') { c ->
+            echo "Container ID: ${c.id}"
+            sh 'docker exec backend-container mvn --version'
+          }
+        }
       }
     }
     stage('Front-end') {
-      agent {
-        docker { image 'node:16-alpine' }
-      }
       steps {
-        sh 'node --version'
+        script {
+          docker.image('node:16-alpine').withRun('-d --name frontend-container') { c ->
+            echo "Container ID: ${c.id}"
+            sh 'docker exec frontend-container node --version'
+          }
+        }
+      }
+    }
+    stage('DB') {
+      steps {
+        script {
+          docker.image('mysql:latest').withRun('-d --name db-container -e MYSQL_ROOT_PASSWORD=example') { c ->
+            echo "Container ID: ${c.id}"
+            // Add your DB-related commands here
+          }
+        }
       }
     }
   }
